@@ -1,0 +1,14 @@
+# Clean up the cache before build
+docker system prune -a
+
+# Build
+docker build -t searchengine .
+
+# See the images
+docker images
+
+# Run a specific image
+docker run -d -p 5000:5000 searchengine
+
+
+docker-compose up
