@@ -16,10 +16,10 @@ class ClassifyManager:
         print(item)
         knn_loaded_model = pickle.load(open('model_knn.sav', 'rb'))
         new_series = pd.Series(item)
-        predict_result = knn_loaded_model.predict(new_series)
+        predict_result = knn_loaded_model.predict(new_series).tolist()
         print(predict_result)
         # The search item has been found! Return now
-        return [2000,4000,item,predict_result]
+        return [4,5,predict_result]
 
     def classify2(self,item):
         print(item)
@@ -40,11 +40,11 @@ if __name__ == "__main__" :
 #       REST API          #
 ###############################
 #GET http://127.0.0.1:5000/v1/search
-@app.route( "/"+VERSION+ "/search",methods = ['GET'])
-def search():
+@app.route( "/"+VERSION+ "/search/<input>",methods = ['GET'])
+def search(input):
     print('search HIT')
     manager = ClassifyManager()
-    results = manager.classify(request.args.get("tools"))
+    results = manager.classify(input)
     return json.dumps({"results":results})
 
 @app.route( "/"+VERSION+ "/search2",methods = ['GET'])
