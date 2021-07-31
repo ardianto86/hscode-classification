@@ -1,2 +1,10 @@
-docker build -t searchengine
+docker system prune -a
+
+docker build -t searchengine .
+
+docker images
+
+docker run -d -p 5000:5000 searchengine
+
+
 docker-compose up
