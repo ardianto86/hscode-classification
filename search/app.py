@@ -13,8 +13,12 @@ redis = Redis(host='redis', port=6379)
 class ClassifyManager:
     def classify(self,item):
         print(item)
+        #load model file
+        #compare input item --> train model file
+        #define filter --> db (MongoDB)
+        #return result
         # The search item has been found! Return now
-        return [2000,4000,5000]
+        return [2000,30,5000]
 
 ###############################
 #        UNIT TEST            #

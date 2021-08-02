@@ -1,0 +1,10 @@
+#Used to build docker
+docker build -t searchengine .
+docker-compose up
+
+# Used to start k8s
+minikube start
+minikube docker-env
+minikube -p minikube docker-env | Invoke-Expression
+kubectl apply -f deployment.yaml
+kubectl get pods
