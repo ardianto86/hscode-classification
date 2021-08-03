@@ -1,11 +1,12 @@
 from flask import Flask, redirect, url_for, request
-from redis import Redis
 import json
+import pickle
+from pandas import pandas as pd
+import numpy as np
 
 VERSION = "v1"
 
 app = Flask(__name__)
-redis = Redis(host='redis', port=6379)
 
 ###############################
 #        CLASS OBJECT         #
@@ -13,12 +14,18 @@ redis = Redis(host='redis', port=6379)
 class ClassifyManager:
     def classify(self,item):
         print(item)
-        #load model file
-        #compare input item --> train model file
-        #define filter --> db (MongoDB)
-        #return result
+        knn_loaded_model = pickle.load(open('model_knn.sav', 'rb'))
+        new_series = pd.Series(item)
+        predict_result = knn_loaded_model.predict(new_series).tolist()
+        print(predict_result)
         # The search item has been found! Return now
-        return [2000,30,5000]
+        return [4,5,predict_result]
+
+    def classify2(self,item):
+        print(item)
+        # The search item has been found! Return now
+        return [1,2,3]
+
 
 ###############################
 #        UNIT TEST            #
@@ -33,11 +40,19 @@ if __name__ == "__main__" :
 #       REST API          #
 ###############################
 #GET http://127.0.0.1:5000/v1/search
-@app.route( "/"+VERSION+ "/search",methods = ['GET'])
-def search():
+@app.route( "/"+VERSION+ "/search/<input>",methods = ['GET'])
+def search(input):
+    print('search HIT')
     manager = ClassifyManager()
-    results = manager.classify(request.args.get('search'))
+    results = manager.classify(input)
     return json.dumps({"results":results})
+
+@app.route( "/"+VERSION+ "/search2",methods = ['GET'])
+def search2():
+    print('search2 HIT')
+    manager = ClassifyManager()
+    results2 = manager.classify2("wine")
+    return json.dumps({"results":results2})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True)
