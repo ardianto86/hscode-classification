@@ -1,3 +1,16 @@
+
+#This 
+GET http://127.0.0.1:5000/v1/search
 {
-    "search":"LAMB CHOP"
+    "search":["HSCODE1","HSCODE2","HSCODE3"]
+}
+
+{
+    "version" : 0.0.0
+    "status" :0,
+    "results":[
+        123456,
+        12345,
+        1234
+    ]
 }
