@@ -1,6 +1,9 @@
 from flask import Flask, redirect, url_for, request
 from redis import Redis
 import json
+import os
+
+THIS_SCRIPT_PATH = os.path.realpath(__file__)
 
 VERSION = "v1"
 
@@ -11,6 +14,11 @@ redis = Redis(host='redis', port=6379)
 #        CLASS OBJECT         #
 ###############################
 class ClassifyManager:
+    def __init__(self):
+        CONFIGURATION = THIS_SCRIPT_PATH + "\configuration\setting.json"  
+        if(os.path.isfile(CONFIGURATION)):
+            self.status
+            json.load(CONFIGURATION)
     def classify(self,item):
         print(item)
         # The search item has been found! Return now
