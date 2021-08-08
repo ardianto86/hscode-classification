@@ -15,19 +15,23 @@ import os
 VERSION = "v1"
 SEARCH = 'search'
 
-THIS_SCRIPT_PATH = os.path.realpath(__file__)
+THIS_SCRIPT_PATH = os.path.dirname(__file__)
 
 flask_app = Flask(__name__)
 app = Api(app = flask_app)
 
-name_space = app.namespace(SEARCH, description = 'To access search engine API')
+DESCRIPTION ='''
+This API is the API libraries which is used to get the search result from the search engine
+'''
+
+name_space = app.namespace(SEARCH, description = DESCRIPTION)
 
 ###############################
 #     SEARCH CATEGORIZATION   #
 ###############################
-class EnumSearches(enum.Enum):
-    Mock = 1
-    KNN = 2
+class EnumSearches(str,enum.Enum):
+    Mock = "mock"
+    KNN = "knn"
 
 class EnumStatus(IntEnum):
     OK = 200
@@ -37,70 +41,96 @@ class EnumStatus(IntEnum):
     SEARCH_INTERNAL_NOT_FOUND_CONFIGURATION     = 41002
      
 STATUS_SEARCH_GET = {}
-STATUS_SEARCH_GET[int(EnumStatus.OK)]                                        = 'OK'
-STATUS_SEARCH_GET[int(EnumStatus.SEARCH_INVALID_ARG)]                        = 'Invalid Argument'
-STATUS_SEARCH_GET[int(EnumStatus.SEARCH_NOT_FOUND_RESULT)]                   = 'HS code not found'
-STATUS_SEARCH_GET[int(EnumStatus.SEARCH_INTERNAL_NOT_FOUND_MODEL)]           = 'Internal error, model file not found'
-STATUS_SEARCH_GET[int(EnumStatus.SEARCH_INTERNAL_NOT_FOUND_CONFIGURATION)]   = 'Internal error, configuration file not found'
+STATUS_SEARCH_GET[str(EnumStatus.OK)]                                        = 'OK'
+STATUS_SEARCH_GET[str(EnumStatus.SEARCH_INVALID_ARG)]                        = 'Invalid Argument'
+STATUS_SEARCH_GET[str(EnumStatus.SEARCH_NOT_FOUND_RESULT)]                   = 'HS code not found'
+STATUS_SEARCH_GET[str(EnumStatus.SEARCH_INTERNAL_NOT_FOUND_MODEL)]           = 'Internal error, model file not found'
+STATUS_SEARCH_GET[str(EnumStatus.SEARCH_INTERNAL_NOT_FOUND_CONFIGURATION)]   = 'Internal error, configuration file not found'
 
-print(STATUS_SEARCH_GET)
 
 ###############################
 #        CLASS OBJECT         #
 ###############################
 class ClassifyManager:
+    def get_status(self):
+        status = {}
+        status["code"] = self.status
+        status["message"] = STATUS_SEARCH_GET[str(self.status)]
+        return status
+
+
     def __init__(self):
-        CONFIGURATION = THIS_SCRIPT_PATH + "\configuration\setting.json"  
+        CONFIGURATION = THIS_SCRIPT_PATH + "/configuration/setting.json"  
+        print(CONFIGURATION)
+        self.config = {}
         if(os.path.isfile(CONFIGURATION)):
             self.status = EnumStatus.OK
-            json.load(CONFIGURATION)
+            self.config = json.load(open(CONFIGURATION))
         else: self.status = EnumStatus.SEARCH_INTERNAL_NOT_FOUND_CONFIGURATION
 
-    def classify(self,item, type):
+    def classify(self,item):
+        #JSON DATA AND STATUS
+        DATA = "data"
+        STATUS = "status"
+        
+        #HS CODE OBJECT
+        HSCODE = "hscode"
+        DESCRIPTION = "description"
+        PROBABILITY = "probability"
+
+        #CONFIGURATION
+        DEFAULT = "default"
+        MODEL_FILE = "model_file"
+        
+        response = {}
+        datas = []
+        type = self.config[DEFAULT]
+        model_file =  self.config[MODEL_FILE]
+        print(type)
+        print(EnumSearches.KNN)
         if(type == EnumSearches.KNN):
-            knn_loaded_model = pickle.load(open('model_knn.sav', 'rb'))
+            data = {}
+            knn_loaded_model = pickle.load(open(model_file["knn"], 'rb'))
             new_series = pd.Series(item)
-            predict_result = knn_loaded_model.predict(new_series).tolist()
-            return predict_result
+            predict_results = knn_loaded_model.predict(new_series).tolist()
+            for predict_result in predict_results:
+                data[HSCODE] = predict_result
+                data[DESCRIPTION] = "A single product"
+                data[PROBABILITY] = 0.9
+                datas.append(data)
         
         if(type == EnumSearches.Mock):
-            return [1,2,3]
+            data = {}
+            data[HSCODE]        = 133456
+            data[DESCRIPTION]   = "A single product"
+            data[PROBABILITY]   = 0.9
+            datas.append(data)
+
+        response[DATA] = datas
+        response[STATUS] = self.get_status()    
+        return json.dumps(response)
 
 ###############################
 #        UNIT TEST            #
 ###############################
 if __name__ == "__main__" :
     manager = ClassifyManager()
-    message = manager.classify("TEST",EnumSearches.Mock)
-    print(message)
+    message = manager.classify("TEST")
 
 
 ###############################
 #       REST API          #
 ###############################
-PARAMS_SEARCH_GET_JSON = { 'input': 'Specify the HS code which is provided by user' } 
+PARAMS_SEARCH_GET_JSON = { 'input': 'Specify keyword to search the HS code' } 
 
 #GET http://127.0.0.1:5000/v1/search/<input>
 @name_space.route("/"+VERSION+ "/"+ SEARCH + "/<input>")
-class SearchSingle(Resource):
+class SearchManager(Resource):
     @app.doc(responses=STATUS_SEARCH_GET, 
 			 params=PARAMS_SEARCH_GET_JSON)
     def get(self,input):
-        print(input)
         manager = ClassifyManager()
-        results = manager.classify(input,EnumSearches.KNN)
-        return json.dumps({"results":results})
-
-#GET http://127.0.0.1:5000/v1/search/mock/<input>
-@name_space.route("/"+VERSION+ "/"+ SEARCH + "/mock/<input>")
-class SearchSingleMock(Resource):
-    @app.doc(responses=STATUS_SEARCH_GET, 
-			 params=PARAMS_SEARCH_GET_JSON)
-    def get(self,input):
-        print(input)
-        manager = ClassifyManager()
-        results = manager.classify(input,EnumSearches.Mock)
-        return json.dumps({"results":results})
+        return manager.classify(input)
 
 if __name__ == "__main__":
     flask_app.run(host="0.0.0.0", debug=True)

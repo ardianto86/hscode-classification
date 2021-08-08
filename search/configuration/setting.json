@@ -3,5 +3,5 @@
         "mock":"mock_file.json",
         "knn": "model_knn.sav"
     },
-    "default_algo": "mock"
+    "default": "mock"
 }
