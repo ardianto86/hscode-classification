@@ -70,6 +70,7 @@ class ClassifyManager:
 
     def classify(self,item):
         #JSON DATA AND STATUS
+        ITEM = "item"
         DATA = "data"
         STATUS = "status"
         
@@ -83,39 +84,41 @@ class ClassifyManager:
         MODEL_FILE = "model_file"
         
         response = {}
-        datas = []
+        items = []
+        datas = {}
         type = self.config[DEFAULT]
         model_file =  self.config[MODEL_FILE]
-        print(type)
-        print(EnumSearches.KNN)
-        if(type == EnumSearches.KNN):
-            data = {}
-            knn_loaded_model = pickle.load(open(model_file["knn"], 'rb'))
-            new_series = pd.Series(item)
-            predict_results = knn_loaded_model.predict(new_series).tolist()
-            for predict_result in predict_results:
-                data[HSCODE] = predict_result
-                data[DESCRIPTION] = "A single product"
-                data[PROBABILITY] = 0.9
-                datas.append(data)
-        
-        if(type == EnumSearches.Mock):
-            data = {}
-            data[HSCODE]        = 133456
-            data[DESCRIPTION]   = "A single product"
-            data[PROBABILITY]   = 0.9
-            datas.append(data)
+
+        #if(os.path.isfile(item)):
+        #    data = pd.read_csv(item)
+        #else:
+        items.append(item)
+
+        for item in items:
+            print(item)
+            datas[ITEM] = []
+            if(type == EnumSearches.KNN):
+                data = {}
+                knn_loaded_model = pickle.load(open(model_file["knn"], 'rb'))
+                new_series = pd.Series(item)
+                predict_results = knn_loaded_model.predict(new_series).tolist()
+                for predict_result in predict_results:
+                    data[HSCODE] = predict_result
+                    data[DESCRIPTION] = "A single product"
+                    data[PROBABILITY] = 0.9
+                    datas[ITEM].append(data)
+            
+            if(type == EnumSearches.Mock):
+                data = {}
+                data[HSCODE]        = 133456
+                data[DESCRIPTION]   = "A single product"
+                data[PROBABILITY]   = 0.9
+                datas[ITEM].append(data)
 
         response[DATA] = datas
         response[STATUS] = self.get_status()    
         return json.dumps(response)
 
-###############################
-#        UNIT TEST            #
-###############################
-if __name__ == "__main__" :
-    manager = ClassifyManager()
-    message = manager.classify("TEST")
 
 
 ###############################
@@ -125,12 +128,20 @@ PARAMS_SEARCH_GET_JSON = { 'input': 'Specify keyword to search the HS code' }
 
 #GET http://127.0.0.1:5000/v1/search/<input>
 @name_space.route("/"+VERSION+ "/"+ SEARCH + "/<input>")
-class SearchManager(Resource):
+class search_input(Resource):
     @app.doc(responses=STATUS_SEARCH_GET, 
 			 params=PARAMS_SEARCH_GET_JSON)
     def get(self,input):
         manager = ClassifyManager()
         return manager.classify(input)
 
-if __name__ == "__main__":
+#@name_space.route("/"+VERSION+ "/"+ SEARCH + "/utility")
+#class search_utility(Resource):
+
+###############################
+#        UNIT TEST            #
+###############################
+if __name__ == "__main__" :
+    manager = ClassifyManager()
     flask_app.run(host="0.0.0.0", debug=True)
+
