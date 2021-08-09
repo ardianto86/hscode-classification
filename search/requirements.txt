@@ -1,4 +1,5 @@
 flask
 flask-restplus
+flask-bootstrap
 pandas
 sklearn

@@ -1,4 +1,4 @@
-from flask import Flask, redirect, url_for, request
+from flask import Flask, redirect, url_for, request, render_template, make_response
 import werkzeug 
 werkzeug.cached_property = werkzeug.utils.cached_property
 import flask.scaffold
@@ -11,6 +11,7 @@ import numpy as np
 import enum
 from enum import IntEnum
 import os
+from flask_bootstrap import Bootstrap
 
 VERSION = "v1"
 SEARCH = 'search'
@@ -19,6 +20,7 @@ THIS_SCRIPT_PATH = os.path.dirname(__file__)
 
 flask_app = Flask(__name__)
 app = Api(app = flask_app)
+bootstrap = Bootstrap(flask_app)
 
 DESCRIPTION ='''
 This API is the API libraries which is used to get the search result from the search engine
@@ -122,6 +124,11 @@ class ClassifyManager:
         response[STATUS] = self.get_status()    
         return json.dumps(response)
 
+    def classify2(self,item):
+        print(item)
+        # The search item has been found! Return now
+        return "<h1>someresult</h1>"
+
 manager = ClassifyManager()
 
 ###############################
@@ -139,6 +146,23 @@ class search_input(Resource):
 
 #@name_space.route("/"+VERSION+ "/"+ SEARCH + "/utility")
 #class search_utility(Resource):
+
+@app.route('/hello')
+class HelloWorld(Resource):
+    def get(self):
+        return {'hello': 'world'}
+
+@app.route('/index')
+class Index(Resource):
+    def get(self):
+        headers = {'Content-Type': 'text/html'}
+        return make_response(render_template('index.html'),200,headers)
+
+@app.route('/filter')
+class Filter(Resource):
+    def get(self):
+        headers = {'Content-Type': 'text/html'}
+        return make_response(render_template('filter.html'),200,headers)
 
 ###############################
 #        UNIT TEST            #
